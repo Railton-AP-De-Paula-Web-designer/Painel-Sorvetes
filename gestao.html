@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="gestao.css"> 
+    <title>Gestão de Estoque - Distribuidora Vitória</title>
+</head>
+<body>
+    <header class="adm-header">
+        <div class="info-loja">
+            <h1>Gestão de Estoque</h1>
+            <p>Distribuidora Vitória - Sorvetes</p>
+        </div>
+
+        <div class="trava-container">
+            <button id="btn-trava" class="bloqueado">
+                <span class="icone-cadeado">🔒</span>
+                <span class="texto-trava">SISTEMA BLOQUEADO</span>
+            </button>
+            <p class="instrucao-trava">Clique 3 vezes para liberar edição</p>
+        </div>
+    </header>
+
+    <main class="dashboard-estoque">
+        <section id="grid-produtos" class="grid-container">
+
+            <article class="card-produto status-vazio" data-sabor="Abacaxi">
+                <h3 class="sabor-nome">Abacaxi</h3>
+                <div class="input-grupo">
+                    <label for="est-abacaxi">Estoque Atual</label>
+                    <input type="number" id="est-abacaxi" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+            <article class="card-produto status-vazio" data-sabor="Chocolate">
+                <h3 class="sabor-nome">Chocolate</h3>
+                <div class="input-grupo">
+                    <label for="est-choc">Estoque Atual</label>
+                    <input type="number" id="est-choc" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+            <article class="card-produto status-vazio" data-sabor="Amendoim">
+                <h3 class="sabor-nome">Amendoim</h3>
+                <div class="input-grupo">
+                    <label for="est-Amendo">Estoque Atual</label>
+                    <input type="number" id="est-Amendo" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+               <article class="card-produto status-vazio" data-sabor="Açaí">
+                <h3 class="sabor-nome">Açaí</h3>
+                <div class="input-grupo">
+                    <label for="est-Açaí">Estoque Atual</label>
+                    <input type="number" id="est-Açaí" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+
+              <article class="card-produto status-vazio" data-sabor="Blue Ice">
+                <h3 class="sabor-nome">Blue Ice</h3>
+                <div class="input-grupo">
+                    <label for="est-Blue Ice">Estoque Atual</label>
+                    <input type="number" id="est-Blue Ice" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+             <article class="card-produto status-vazio" data-sabor="Coco Branco">
+                <h3 class="sabor-nome">Coco Branco</h3>
+                <div class="input-grupo">
+                    <label for="est-Coco-Branco">Estoque Atual</label>
+                    <input type="number" id="est-Coco-Branco" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+              <article class="card-produto status-vazio" data-sabor="Chiclete">
+                <h3 class="sabor-nome">Chiclete</h3>
+                <div class="input-grupo">
+                    <label for="est-Chiclete">Estoque Atual</label>
+                    <input type="number" id="est-Chiclete" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+             <article class="card-produto status-vazio" data-sabor="Chocolate Branco">
+                <h3 class="sabor-nome">Chocolate Branco</h3>
+                <div class="input-grupo">
+                    <label for="est-Chocolate-Branco">Estoque Atual</label>
+                    <input type="number" id="est-Chocolate-Branco" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+              <article class="card-produto status-vazio" data-sabor="Doce de Leite ">
+                <h3 class="sabor-nome">Doce de Leite</h3>
+                <div class="input-grupo">
+                    <label for="est-Doce-de-Leite">Estoque Atual</label>
+                    <input type="number" id="est-Doce-de-Leite" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+                <article class="card-produto status-vazio" data-sabor="Goiaba">
+                <h3 class="sabor-nome">Goiaba</h3>
+                <div class="input-grupo">
+                    <label for="est-Goiaba">Estoque Atual</label>
+                    <input type="number" id="est-Goiaba" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+              <article class="card-produto status-vazio" data-sabor="Groselha">
+                <h3 class="sabor-nome">Groselha</h3>
+                <div class="input-grupo">
+                    <label for="est-Groselha">Estoque Atual</label>
+                    <input type="number" id="est-Groselha" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+               <article class="card-produto status-vazio" data-sabor="Leitinho">
+                <h3 class="sabor-nome">Leitinho</h3>
+                <div class="input-grupo">
+                    <label for="est-Leitinho">Estoque Atual</label>
+                    <input type="number" id="est-Leitinho" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+                 <article class="card-produto status-vazio" data-sabor="Limão">
+                <h3 class="sabor-nome">Limão</h3>
+                <div class="input-grupo">
+                    <label for="est-Limão">Estoque Atual</label>
+                    <input type="number" id="est-Limão" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+              <article class="card-produto status-vazio" data-sabor="Leite Condensado">
+                <h3 class="sabor-nome">Leite Condensado</h3>
+                <div class="input-grupo">
+                    <label for="est-Leite-Condensado">Estoque Atual</label>
+                    <input type="number" id="est-Leite-Condensado" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+             <article class="card-produto status-vazio" data-sabor="Melancia">
+                <h3 class="sabor-nome">Melancia</h3>
+                <div class="input-grupo">
+                    <label for="est-Melancia">Estoque Atual</label>
+                    <input type="number" id="est-Melancia" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+              <article class="card-produto status-vazio" data-sabor="Morango">
+                <h3 class="sabor-nome">Morango</h3>
+                <div class="input-grupo">
+                    <label for="est-Morango">Estoque Atual</label>
+                    <input type="number" id="est-Morango" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+                 <article class="card-produto status-vazio" data-sabor="Milho Verde">
+                <h3 class="sabor-nome">Milho Verde</h3>
+                <div class="input-grupo">
+                    <label for="est-Milho-verde">Estoque Atual</label>
+                    <input type="number" id="est-Milho-Verde" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+            <article class="card-produto status-vazio" data-sabor="Maracujá">
+                <h3 class="sabor-nome">Maracujá</h3>
+                <div class="input-grupo">
+                    <label for="est-Maracujá">Estoque Atual</label>
+                    <input type="number" id="est-Maracujá" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+            <article class="card-produto status-vazio" data-sabor="Maçã Verde">
+                <h3 class="sabor-nome">Maçã Verde</h3>
+                <div class="input-grupo">
+                    <label for="est-Maçã-Verde">Estoque Atual</label>
+                    <input type="number" id="est-Maçã-Verde" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+             <article class="card-produto status-vazio" data-sabor="Nata">
+                <h3 class="sabor-nome">Nata</h3>
+                <div class="input-grupo">
+                    <label for="est-Nata">Estoque Atual</label>
+                    <input type="number" id="est-Nata" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+
+               <article class="card-produto status-vazio" data-sabor="Tangerina">
+                <h3 class="sabor-nome">Tangerina</h3>
+                <div class="input-grupo">
+                    <label for="est-Tangerina">Estoque Atual</label>
+                    <input type="number" id="est-Tangerina" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+
+              <article class="card-produto status-vazio" data-sabor="uva">
+                <h3 class="sabor-nome">Uva</h3>
+                <div class="input-grupo">
+                    <label for="est-uva">Estoque Atual</label>
+                    <input type="number" id="est-Uva" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+            <article class="card-produto status-vazio" data-sabor="Pinta-Língua">
+                <h3 class="sabor-nome">Pinta-Língua</h3>
+                <div class="input-grupo">
+                    <label for="est-Pinta-Língua">Estoque Atual</label>
+                    <input type="number" id="est-Pinta-Língua" class="input-estoque" value="0" min="0" disabled>
+                </div>
+                <div class="indicador-status">Status: Sincronizando...</div>
+            </article>
+
+
+            
+
+
+        </section>
+    </main>
+
+    <footer class="admin-footer">
+        <div class="status-banco">
+            <span class="ponto-conexao"></span> Banco de Dados: <span id="db-status">Aguardando...</span>
+        </div>
+    </footer>
+
+    <script src="gestao.js" defer></script>
+</body>
+</html>
