@@ -152,3 +152,40 @@ document.getElementById('link-adm').addEventListener('click', (e) => {
         alert("Senha incorreta! Acesso negado.");
     }
 });
+
+
+
+
+// --- ATUALIZAÇÃO DE SEGURANÇA: TRAVA DE ESTOQUE EM 2 UNIDADES ---
+// Este bloco sobrescreve a lógica anterior para impedir vendas quando restarem apenas 2 itens.
+
+function monitorarEstoque() {
+    onValue(ref(db, 'estoque'), (snapshot) => {
+        const estoque = snapshot.val();
+        if (!estoque) return;
+
+        document.querySelectorAll('.item-produto').forEach(item => {
+            const nomeSabor = item.querySelector('.nome-produto').innerText.trim();
+            const qtdDisponivel = estoque[nomeSabor];
+
+            // A mágica acontece aqui: mudamos de 0 para 2
+            if (qtdDisponivel !== undefined && qtdDisponivel <= 2) {
+                item.classList.add('status-esgotado'); // Aplica o visual cinza/riscado
+                const btnAdd = item.querySelector('.btn-add');
+                if (btnAdd) btnAdd.disabled = true; // Trava o botão de adicionar
+                
+                // Reseta o contador para evitar pedidos de itens esgotados
+                item.querySelector('.contador').innerText = "0"; 
+            } else {
+                // Se o estoque subir acima de 2 (via painel do gerente), ele libera o botão
+                item.classList.remove('status-esgotado');
+                const btnAdd = item.querySelector('.btn-add');
+                if (btnAdd) btnAdd.disabled = false;
+            }
+        });
+        atualizarResumoPedido();
+    });
+}
+
+// Ativa a nova regra imediatamente
+monitorarEstoque();
