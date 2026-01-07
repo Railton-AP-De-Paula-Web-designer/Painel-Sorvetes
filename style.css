@@ -77,6 +77,12 @@ body {
     font-family: 'Arial Black', sans-serif;
     font-size: 2rem;
     letter-spacing: 2px;
+    text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         0px  0px 8px rgba(0, 255, 255, 0.5)
 }
 
 .brand-slogan {
