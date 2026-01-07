@@ -1,6 +1,6 @@
 // 1. IMPORTAÇÕES
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, update, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, update, increment, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // 2. CONFIGURAÇÃO FIREBASE
 const firebaseConfig = {
@@ -37,38 +37,88 @@ function atualizarResumoPedido(){
     valorTotalDisplay.innerText = `R$ ${valorTotal.toFixed(2)}`;
 }
 
-// 5. EVENTOS DE CLIQUE (+ e -)
+// 5. EVENTOS DE CLIQUE (+ e -) - ATUALIZADO PARA SINCRONIA IMEDIATA
 if (containerProdutos) {
-    containerProdutos.addEventListener('click', (e) =>{
+    containerProdutos.addEventListener('click', async (e) =>{
         const target = e.target;
         const item = target.closest('.item-produto');
         if (!item) return;
 
-        // Se estiver esgotado, não deixa clicar no botão de adicionar (+)
-        if (item.classList.contains('status-esgotado') && target.classList.contains('btn-add')) {
-            return;
-        }
-
+        const nomeSabor = item.querySelector('.nome-produto').innerText.trim();
         const contadorelemento = item.querySelector('.contador');
-        let quantidadeAtual = parseInt(contadorelemento.innerText);
+        const btnAdd = item.querySelector('.btn-add');
+        const btnRemove = item.querySelector('.btn-remove');
+        let quantidadeLocal = parseInt(contadorelemento.innerText);
 
+        // AÇÃO DE ADICIONAR (+)
         if (target.classList.contains('btn-add')) {
-            quantidadeAtual++;
-            contadorelemento.innerText = quantidadeAtual;
-        } else if (target.classList.contains('btn-remove') && quantidadeAtual > 0){
-            quantidadeAtual--;
-            contadorelemento.innerText = quantidadeAtual;
+            if (item.classList.contains('status-esgotado')) return;
+
+            // Desabilita botões para evitar spam de cliques antes da resposta do banco
+            btnAdd.disabled = true;
+
+            try {
+                // Consulta estoque real antes de permitir
+                const snapshot = await get(ref(db, `estoque/${nomeSabor}`));
+                const estoqueReal = snapshot.val() || 0;
+
+                if (estoqueReal > 2) {
+                    // Atualiza Firebase imediatamente (decrementa 1)
+                    await update(ref(db), { [`estoque/${nomeSabor}`]: increment(-1) });
+                    contadorelemento.innerText = quantidadeLocal + 1;
+                } else {
+                    alert("Ops! Este sabor acabou de esgotar ou atingiu o limite de segurança.");
+                }
+            } catch (error) {
+                console.error("Erro ao atualizar estoque:", error);
+            } finally {
+                btnAdd.disabled = false;
+            }
+        } 
+        
+        // AÇÃO DE REMOVER (-)
+        else if (target.classList.contains('btn-remove') && quantidadeLocal > 0) {
+            btnRemove.disabled = true;
+            try {
+                // Devolve 1 para o estoque no Firebase
+                await update(ref(db), { [`estoque/${nomeSabor}`]: increment(1) });
+                contadorelemento.innerText = quantidadeLocal - 1;
+            } catch (error) {
+                console.error("Erro ao devolver estoque:", error);
+            } finally {
+                btnRemove.disabled = false;
+            }
         }
+        
         atualizarResumoPedido();
     });
 }
 
-// 6. BOTÃO CANCELAR
+// 6. BOTÃO CANCELAR (PRECISA DEVOLVER OS ITENS AO ESTOQUE)
 if (btnCancelar) {
-    btnCancelar.addEventListener('click', () =>{
-        if (confirm("Deseja realmente cancelar todo o pedido?")){
-            document.querySelectorAll('.contador').forEach(c => c.innerText = "0");
-            atualizarResumoPedido();
+    btnCancelar.addEventListener('click', async () =>{
+        const itensNoCarrinho = [];
+        document.querySelectorAll('.item-produto').forEach(produto => {
+            const qtd = parseInt(produto.querySelector('.contador').innerText);
+            const nome = produto.querySelector('.nome-produto').innerText.trim();
+            if (qtd > 0) itensNoCarrinho.push({ nome, qtd });
+        });
+
+        if (itensNoCarrinho.length === 0) return;
+
+        if (confirm("Deseja realmente cancelar todo o pedido? Os itens voltarão ao estoque.")){
+            const devolucoes = {};
+            itensNoCarrinho.forEach(item => {
+                devolucoes[`estoque/${item.nome}`] = increment(item.qtd);
+            });
+
+            try {
+                await update(ref(db), devolucoes);
+                document.querySelectorAll('.contador').forEach(c => c.innerText = "0");
+                atualizarResumoPedido();
+            } catch (err) {
+                alert("Erro ao cancelar pedido.");
+            }
         }
     });
 }
@@ -83,11 +133,14 @@ function monitorarEstoque() {
             const nomeSabor = item.querySelector('.nome-produto').innerText.trim();
             const qtdDisponivel = estoque[nomeSabor];
 
-            // TRAVA: Se chegar a 2 unidades ou menos, bloqueia
+            // TRAVA: Se chegar a 2 unidades ou menos, bloqueia imediatamente
             if (qtdDisponivel !== undefined && qtdDisponivel <= 2) {
                 item.classList.add('status-esgotado');
                 const btnAdd = item.querySelector('.btn-add');
                 if (btnAdd) btnAdd.disabled = true;
+                
+                // Se o estoque acabou por outra compra, zera o contador local para segurança
+                // mas não devolvemos nada, pois o estoque já está baixo no banco.
                 item.querySelector('.contador').innerText = "0"; 
             } else {
                 item.classList.remove('status-esgotado');
@@ -99,9 +152,9 @@ function monitorarEstoque() {
     });
 }
 
-// 8. BOTÃO IMPRIMIR (FIREBASE + WHATSAPP)
+// 8. BOTÃO IMPRIMIR (APENAS ENVIA WHATSAPP - O ESTOQUE JÁ FOI ATUALIZADO NO CLIQUE)
 if (btnImprimir) {
-    btnImprimir.addEventListener('click', async () => {
+    btnImprimir.addEventListener('click', () => {
         const totalItensQtd = totalPicolesDisplay.innerText;
         
         if (totalItensQtd === "0") {
@@ -113,30 +166,23 @@ if (btnImprimir) {
         let mensagem = `*🍦 NOVO PEDIDO - Distribuidora Vitoria*\n`;
         mensagem += `----------------------------------\n`;
 
-        const atualizacoes = {};
         document.querySelectorAll('.item-produto').forEach(produto => {
             const qtd = parseInt(produto.querySelector('.contador').innerText);
             const nome = produto.querySelector('.nome-produto').innerText.trim();
-
             if (qtd > 0) {
                 mensagem += `✅ ${qtd}x ${nome}\n`;
-                atualizacoes[`estoque/${nome}`] = increment(-qtd);
             }
         });
 
         mensagem += `----------------------------------\n`;
         mensagem += `*Total do Pedido: ${valorTotalDisplay.innerText}*`;
 
-        try {
-            await update(ref(db), atualizacoes);
-            const linkZap = `https://wa.me/${numeroTelefone}?text=${encodeURIComponent(mensagem)}`;
-            window.open(linkZap, '_blank');
-            document.querySelectorAll('.contador').forEach(c => c.innerText = "0");
-            atualizarResumoPedido();
-        } catch (err) {
-            console.error("Erro:", err);
-            alert("Erro ao conectar com o banco de dados.");
-        }
+        const linkZap = `https://wa.me/${numeroTelefone}?text=${encodeURIComponent(mensagem)}`;
+        window.open(linkZap, '_blank');
+        
+        // Zera o contador local sem devolver ao estoque, pois a venda foi concluída
+        document.querySelectorAll('.contador').forEach(c => c.innerText = "0");
+        atualizarResumoPedido();
     });
 }
 
@@ -147,7 +193,6 @@ if (linkAdm) {
         e.preventDefault();
         const senhaAcesso = "vitoria777";
         const tentativa = prompt("Acesso Restrito. Digite a senha de administrador:");
-
         if (tentativa === senhaAcesso) {
             window.location.href = "gestao.html";
         } else if (tentativa !== null) {
