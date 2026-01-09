@@ -1,6 +1,6 @@
 // 1. IMPORTAÇÕES
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, update, increment, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, update, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // 2. CONFIGURAÇÃO FIREBASE
 const firebaseConfig = {
@@ -23,6 +23,9 @@ const valorTotalDisplay = document.getElementById('valor-total');
 const btnCancelar = document.getElementById('cancelar-pedido');
 const btnImprimir = document.getElementById('imprimir-pedido');
 
+// O seu "Banco Local" para eliminar o delay do Firebase
+let estoqueLocal = {}; 
+
 // 4. ATUALIZAR RESUMO DO PEDIDO
 function atualizarResumoPedido(){
     let totalItens = 0;
@@ -37,64 +40,54 @@ function atualizarResumoPedido(){
     valorTotalDisplay.innerText = `R$ ${valorTotal.toFixed(2)}`;
 }
 
-// 5. EVENTOS DE CLIQUE (+ e -) - ATUALIZADO PARA SINCRONIA IMEDIATA
+// 5. EVENTOS DE CLIQUE (REFATORADO PARA ALTA PERFORMANCE)
 if (containerProdutos) {
-    containerProdutos.addEventListener('click', async (e) =>{
+    containerProdutos.addEventListener('click', (e) =>{
         const target = e.target;
         const item = target.closest('.item-produto');
         if (!item) return;
 
         const nomeSabor = item.querySelector('.nome-produto').innerText.trim();
         const contadorelemento = item.querySelector('.contador');
-        const btnAdd = item.querySelector('.btn-add');
-        const btnRemove = item.querySelector('.btn-remove');
-        let quantidadeLocal = parseInt(contadorelemento.innerText);
+        let quantidadeLocalNoCarrinho = parseInt(contadorelemento.innerText);
 
         // AÇÃO DE ADICIONAR (+)
         if (target.classList.contains('btn-add')) {
-            if (item.classList.contains('status-esgotado')) return;
+            // Verifica no Banco Local (instantâneo) e respeita a trava de 2 unidades
+            if (estoqueLocal[nomeSabor] > 2) {
+                
+                // 1. Atualiza a tela NA HORA (Fluidez total)
+                contadorelemento.innerText = quantidadeLocalNoCarrinho + 1;
+                
+                // 2. Deduz do estoque local para o próximo clique rápido já saber o novo valor
+                estoqueLocal[nomeSabor]--;
 
-            // Desabilita botões para evitar spam de cliques antes da resposta do banco
-            btnAdd.disabled = true;
-
-            try {
-                // Consulta estoque real antes de permitir
-                const snapshot = await get(ref(db, `estoque/${nomeSabor}`));
-                const estoqueReal = snapshot.val() || 0;
-
-                if (estoqueReal > 2) {
-                    // Atualiza Firebase imediatamente (decrementa 1)
-                    await update(ref(db), { [`estoque/${nomeSabor}`]: increment(-1) });
-                    contadorelemento.innerText = quantidadeLocal + 1;
-                } else {
-                    alert("Ops! Este sabor acabou de esgotar ou atingiu o limite de segurança.");
-                }
-            } catch (error) {
-                console.error("Erro ao atualizar estoque:", error);
-            } finally {
-                btnAdd.disabled = false;
+                // 3. Sincroniza com Firebase em background
+                update(ref(db), { [`estoque/${nomeSabor}`]: increment(-1) }).catch(err => {
+                    console.error("Erro de sincronia:", err);
+                });
+            } else {
+                alert("Sabor esgotado ou no limite de segurança!");
             }
         } 
         
         // AÇÃO DE REMOVER (-)
-        else if (target.classList.contains('btn-remove') && quantidadeLocal > 0) {
-            btnRemove.disabled = true;
-            try {
-                // Devolve 1 para o estoque no Firebase
-                await update(ref(db), { [`estoque/${nomeSabor}`]: increment(1) });
-                contadorelemento.innerText = quantidadeLocal - 1;
-            } catch (error) {
-                console.error("Erro ao devolver estoque:", error);
-            } finally {
-                btnRemove.disabled = false;
-            }
+        else if (target.classList.contains('btn-remove') && quantidadeLocalNoCarrinho > 0) {
+            // 1. Atualiza tela
+            contadorelemento.innerText = quantidadeLocalNoCarrinho - 1;
+            
+            // 2. Devolve ao estoque local
+            estoqueLocal[nomeSabor]++;
+
+            // 3. Sincroniza background
+            update(ref(db), { [`estoque/${nomeSabor}`]: increment(1) });
         }
         
         atualizarResumoPedido();
     });
 }
 
-// 6. BOTÃO CANCELAR (PRECISA DEVOLVER OS ITENS AO ESTOQUE)
+// 6. BOTÃO CANCELAR
 if (btnCancelar) {
     btnCancelar.addEventListener('click', async () =>{
         const itensNoCarrinho = [];
@@ -106,7 +99,7 @@ if (btnCancelar) {
 
         if (itensNoCarrinho.length === 0) return;
 
-        if (confirm("Deseja realmente cancelar todo o pedido? Os itens voltarão ao estoque.")){
+        if (confirm("Deseja realmente cancelar todo o pedido?")){
             const devolucoes = {};
             itensNoCarrinho.forEach(item => {
                 devolucoes[`estoque/${item.nome}`] = increment(item.qtd);
@@ -117,31 +110,30 @@ if (btnCancelar) {
                 document.querySelectorAll('.contador').forEach(c => c.innerText = "0");
                 atualizarResumoPedido();
             } catch (err) {
-                alert("Erro ao cancelar pedido.");
+                alert("Erro ao cancelar.");
             }
         }
     });
 }
 
-// 7. MONITORAMENTO DE ESTOQUE (COM TRAVA DE 2 UNIDADES)
+// 7. MONITORAMENTO DE ESTOQUE (ALIMENTA O BANCO LOCAL)
 function monitorarEstoque() {
     onValue(ref(db, 'estoque'), (snapshot) => {
         const estoque = snapshot.val();
         if (!estoque) return;
 
+        // Sincroniza o banco local com o que vem do Firebase
+        estoqueLocal = estoque; 
+
         document.querySelectorAll('.item-produto').forEach(item => {
             const nomeSabor = item.querySelector('.nome-produto').innerText.trim();
-            const qtdDisponivel = estoque[nomeSabor];
+            const qtdDisponivel = estoqueLocal[nomeSabor];
 
-            // TRAVA: Se chegar a 2 unidades ou menos, bloqueia imediatamente
+            // Bloqueio visual se chegar a 2
             if (qtdDisponivel !== undefined && qtdDisponivel <= 2) {
                 item.classList.add('status-esgotado');
                 const btnAdd = item.querySelector('.btn-add');
                 if (btnAdd) btnAdd.disabled = true;
-                
-                // Se o estoque acabou por outra compra, zera o contador local para segurança
-                // mas não devolvemos nada, pois o estoque já está baixo no banco.
-                item.querySelector('.contador').innerText = "0"; 
             } else {
                 item.classList.remove('status-esgotado');
                 const btnAdd = item.querySelector('.btn-add');
@@ -152,11 +144,10 @@ function monitorarEstoque() {
     });
 }
 
-// 8. BOTÃO IMPRIMIR (APENAS ENVIA WHATSAPP - O ESTOQUE JÁ FOI ATUALIZADO NO CLIQUE)
+// 8. BOTÃO IMPRIMIR
 if (btnImprimir) {
     btnImprimir.addEventListener('click', () => {
         const totalItensQtd = totalPicolesDisplay.innerText;
-        
         if (totalItensQtd === "0") {
             alert("O carrinho está vazio!");
             return;
@@ -169,18 +160,15 @@ if (btnImprimir) {
         document.querySelectorAll('.item-produto').forEach(produto => {
             const qtd = parseInt(produto.querySelector('.contador').innerText);
             const nome = produto.querySelector('.nome-produto').innerText.trim();
-            if (qtd > 0) {
-                mensagem += `✅ ${qtd}x ${nome}\n`;
-            }
+            if (qtd > 0) mensagem += `✅ ${qtd}x ${nome}\n`;
         });
 
         mensagem += `----------------------------------\n`;
-        mensagem += `*Total do Pedido: ${valorTotalDisplay.innerText}*`;
+        mensagem += `*Total: ${valorTotalDisplay.innerText}*`;
 
         const linkZap = `https://wa.me/${numeroTelefone}?text=${encodeURIComponent(mensagem)}`;
         window.open(linkZap, '_blank');
         
-        // Zera o contador local sem devolver ao estoque, pois a venda foi concluída
         document.querySelectorAll('.contador').forEach(c => c.innerText = "0");
         atualizarResumoPedido();
     });
@@ -192,12 +180,8 @@ if (linkAdm) {
     linkAdm.addEventListener('click', (e) => {
         e.preventDefault();
         const senhaAcesso = "vitoria777";
-        const tentativa = prompt("Acesso Restrito. Digite a senha de administrador:");
-        if (tentativa === senhaAcesso) {
-            window.location.href = "gestao.html";
-        } else if (tentativa !== null) {
-            alert("Senha incorreta! Acesso negado.");
-        }
+        const tentativa = prompt("Senha ADM:");
+        if (tentativa === senhaAcesso) window.location.href = "gestao.html";
     });
 }
 
