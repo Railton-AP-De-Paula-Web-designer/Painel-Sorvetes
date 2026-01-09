@@ -74,6 +74,7 @@ body {
 
 .brand-name {
     color: #00ffff;
+    margin-top: 25px;
     font-family: 'Arial Black', sans-serif;
     font-size: 2rem;
     letter-spacing: 2px;
